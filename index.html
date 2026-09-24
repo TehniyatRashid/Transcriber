@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Transcription Tester</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0C0D10;
+    --panel: #15171B;
+    --panel-2: #1B1E23;
+    --line: #2A2D33;
+    --ink: #ECEDEF;
+    --ink-dim: #9A9EA6;
+    --accent: #5FE3C4;
+    --accent-dim: #2E5F53;
+    --rec: #F0563D;
+    --rec-dim: #4A241C;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); height:100%; }
+  *{ box-sizing: border-box; }
+  body{
+    margin:0;
+    min-height:100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height:1.5;
+  }
+  h1,h2,h3, .display{ font-family:'Space Grotesk', sans-serif; }
+  ::selection{ background: var(--accent-dim); color: var(--ink); }
+
+  .wrap{
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  header.top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap: 16px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  header.top .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .mark{
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(155deg, var(--accent), #2B9C87);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .mark svg{ width:16px; height:16px; }
+  header.top h1{
+    font-size: 20px;
+    font-weight:600;
+    margin:0;
+    letter-spacing: -0.01em;
+  }
+  header.top p{
+    margin:2px 0 0;
+    font-size: 13px;
+    color: var(--ink-dim);
+  }
+  .status-pill{
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 5px 12px 5px 10px;
+    display:flex;
+    align-items:center;
+    gap:7px;
+  }
+  .status-pill .dot{
+    width:7px; height:7px; border-radius:50%;
+    background: var(--ink-dim);
+  }
+  .status-pill.ok .dot{ background: var(--accent); }
+  .status-pill.ok{ color: var(--accent); border-color: var(--accent-dim); }
+
+  .grid{
+    display:grid;
+    grid-template-columns: 300px 1fr;
+    gap: 22px;
+    align-items:start;
+  }
+  @media (max-width: 780px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+  }
+
+  .field{ margin-bottom: 18px; }
+  .field:last-child{ margin-bottom:0; }
+  .field label{
+    display:block;
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-bottom: 7px;
+  }
+  .field select{
+    width:100%;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 10px 11px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239A9EA6' stroke-width='2.4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .field select:focus{
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-dim);
+  }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+  }
+  .toggle-row:first-of-type{ border-top:none; padding-top:0; }
+  .toggle-row span{ font-size: 13.5px; }
+  .switch{
+    position:relative; width:38px; height:22px;
+    border-radius: 100px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .switch .knob{
+    position:absolute; top:2px; left:2px;
+    width:16px; height:16px; border-radius:50%;
+    background: var(--ink-dim);
+    transition: transform .16s ease, background .16s ease;
+  }
+  .switch.on{ background: var(--accent-dim); border-color: var(--accent); }
+  .switch.on .knob{ background: var(--accent); transform: translateX(16px); }
+
+  .stage{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+    padding: 38px 20px 30px;
+  }
+  .stage .label{
+    font-size: 13px;
+    color: var(--ink-dim);
+    margin-bottom: 22px;
+  }
+
+  #recBtn{
+    width: 92px; height: 92px;
+    border-radius: 50%;
+    border: none;
+    background: var(--panel-2);
+    outline: 2px solid var(--line);
+    outline-offset: 6px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    transition: outline-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  #recBtn:hover{ transform: scale(1.03); }
+  #recBtn:active{ transform: scale(0.97); }
+  #recBtn:focus-visible{ outline-color: var(--accent); }
+  #recBtn .glyph{
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: var(--rec);
+  }
+  #recBtn.recording{
+    background: var(--rec-dim);
+    outline-color: var(--rec);
+    animation: pulse 1.7s ease-in-out infinite;
+  }
+  #recBtn.recording .glyph{
+    border-radius: 4px;
+    width: 20px; height: 20px;
+  }
+  #recBtn.busy{ opacity:.55; cursor: default; }
+  #recBtn.busy:hover{ transform:none; }
+  @keyframes pulse{
+    0%,100%{ outline-offset: 6px; }
+    50%{ outline-offset: 10px; }
+  }
+
+  .timer{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--ink-dim);
+    margin-top: 18px;
+    min-height: 20px;
+  }
+  .timer.live{ color: var(--rec); }
+
+  canvas#wave{
+    width: 100%;
+    max-width: 460px;
+    height: 54px;
+    margin-top: 14px;
+  }
+
+  .transcript-card{ margin-top: 22px; }
+  .transcript-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 14px;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .transcript-head h3{
+    font-size: 14.5px;
+    margin:0;
+    font-weight:600;
+  }
+  .meta-tags{
+    display:flex; gap:8px; flex-wrap:wrap;
+  }
+  .tag{
+    font-size: 11.5px;
+    color: var(--ink-dim);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 3px 9px;
+    border-radius: 100px;
+  }
+  .copy-btn{
+    font-size: 12.5px;
+    color: var(--ink);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 6px 11px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .15s ease;
+    margin-top: 12px;
+  }
+  .copy-btn:hover{
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  #transcriptBody{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    min-height: 140px;
+    max-height: 380px;
+    overflow-y: auto;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  #transcriptBody.empty{
+    color: var(--ink-dim);
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #transcriptBody .interim{
+    color: var(--ink-dim);
+    font-style: italic;
+    opacity: 0.65;
+  }
+  #transcriptBody .live-caret{
+    display: inline-block;
+    width: 2px;
+    height: 1.2em;
+    background: var(--accent);
+    animation: blink 0.9s infinite;
+    margin-left: 3px;
+  }
+  @keyframes blink{
+    0%, 49%, 100%{ opacity: 1; }
+    50%, 99%{ opacity: 0; }
+  }
+
+  .history-section{
+    margin-top: 22px;
+  }
+  .history-section h3{
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-dim);
+    margin: 0 0 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  #histList{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .hist-item{
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 10px;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+  .hist-item:hover{
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+  .hist-top{
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--ink-dim);
+    margin-bottom: 5px;
+  }
+  .hist-snip{
+    font-size: 12.5px;
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  .empty-note{
+    text-align: center;
+    color: var(--ink-dim);
+    padding: 20px 16px;
+    font-size: 12px;
+    font-style: italic;
+  }
+
+  .banner{
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: var(--rec-dim);
+    color: #FCA5A5;
+    border: 1px solid var(--rec);
+    font-size: 13px;
+    display: none;
+    z-index: 1000;
+    max-width: 300px;
+  }
+  .banner.show{ display: block; }
+  .banner.success{
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #86EFAC;
+  }
+</style>
+</head>
+<body>
+
+<div id="banner" class="banner"></div>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 1v22M4.22 4.22l15.56 15.56M1 12h22M4.22 19.78L19.78 4.22"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Transcription Tester</h1>
+        <p>Multi-Language Voice Recording</p>
+      </div>
+    </div>
+    <div class="status-pill ok">
+      <span class="dot"></span>
+      <span>Ready</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="field">
+        <label>Language</label>
+        <select id="langEl">
+          <option value="en">English</option>
+          <option value="ms">Malay</option>
+          <option value="pa">Punjabi</option>
+          <option value="ur">Urdu</option>
+          <option value="vi">Vietnamese</option>
+          <option value="ta">Tamil</option>
+          <option value="ne">Nepali</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Formatting</label>
+        <div class="toggle-row">
+          <span>Smart Formatting</span>
+          <div class="switch on" onclick="toggleSwitch(this)">
+            <div class="knob"></div>
+          </div>
+        </div>
+        <div class="toggle-row">
+          <span>Punctuation</span>
+          <div class="switch on" onclick="toggleSwitch(this)">
+            <div class="knob"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card stage">
+        <div class="label" id="stageLabel">Tap to record</div>
+        <button id="recBtn" aria-label="Start recording">
+          <div class="glyph"></div>
+        </button>
+        <div class="timer" id="timer">00:00</div>
+        <canvas id="wave"></canvas>
+      </div>
+
+      <div class="card transcript-card">
+        <div class="transcript-head">
+          <h3>Transcript</h3>
+          <div class="meta-tags" id="metaTags"></div>
+        </div>
+        <div id="transcriptBody" class="empty">Start recording to see transcript...</div>
+        <button class="copy-btn" id="copyBtn">Copy text</button>
+      </div>
+
+      <div class="card">
+        <div class="history-section">
+          <h3>History</h3>
+          <div id="histList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const DEFAULT_MODEL = 'nova-3';
+
+  const langEl = document.getElementById('langEl');
+  const recBtn = document.getElementById('recBtn');
+  const timerEl = document.getElementById('timer');
+  const transcriptBody = document.getElementById('transcriptBody');
+  const metaTags = document.getElementById('metaTags');
+  const copyBtn = document.getElementById('copyBtn');
+  const stageLabel = document.getElementById('stageLabel');
+  const histList = document.getElementById('histList');
+  const bannerEl = document.getElementById('banner');
+  const waveCanvas = document.getElementById('wave');
+  const waveCtx = waveCanvas.getContext('2d');
+
+  let state = 'idle';
+  let ws = null;
+  let stream = null;
+  let audioCtx = null;
+  let analyser = null;
+  let processorNode = null;
+  let muteGain = null;
+  let rafId = null;
+  let timerInterval = null;
+  let secondsElapsed = 0;
+  let finalText = '';
+  let interimText = '';
+  let lastConfidence = null;
+  let detectedLangs = new Set();
+
+  function showBanner(msg, type = 'error'){
+    bannerEl.textContent = msg;
+    bannerEl.className = `banner show ${type}`;
+    if (type === 'success'){
+      setTimeout(() => bannerEl.classList.remove('show'), 3000);
+    }
+  }
+
+  function hideBanner(){
+    bannerEl.classList.remove('show');
+  }
+
+  function fmtTime(seconds){
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return m + ':' + s;
+  }
+
+  function toggleSwitch(el){
+    el.classList.toggle('on');
+  }
+
+  function getToggles(){
+    const toggles = document.querySelectorAll('.switch');
+    return {
+      smartFormat: toggles[0].classList.contains('on'),
+      punctuate: toggles[1].classList.contains('on')
+    };
+  }
+
+  function resizeWaveCanvas(){
+    const rect = waveCanvas.getBoundingClientRect();
+    waveCanvas.width = rect.width * window.devicePixelRatio;
+    waveCanvas.height = rect.height * window.devicePixelRatio;
+    waveCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  }
+
+  function drawIdleWave(){
+    waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+    waveCtx.strokeStyle = 'rgba(95, 227, 196, 0.15)';
+    waveCtx.lineWidth = 2;
+    waveCtx.beginPath();
+    for (let i = 0; i < 60; i++){
+      const y = waveCanvas.height / 2 + Math.sin(i * 0.15) * 12;
+      if (i === 0) waveCtx.moveTo(i * 8, y);
+      else waveCtx.lineTo(i * 8, y);
+    }
+    waveCtx.stroke();
+  }
+
+  function drawWave(){
+    if (!analyser) return;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyser.getByteTimeDomainData(dataArray);
+    waveCtx.clearRect(0, 0, waveCanvas.width, waveCanvas.height);
+    waveCtx.lineWidth = 2;
+    waveCtx.strokeStyle = '#F0563D';
+    waveCtx.beginPath();
+    const sliceWidth = waveCanvas.width / bufferLength;
+    let x = 0;
+    for (let i = 0; i < bufferLength; i++){
+      const v = dataArray[i] / 128.0;
+      const y = v * waveCanvas.height / 2;
+      if (i === 0) waveCtx.moveTo(x, y);
+      else waveCtx.lineTo(x, y);
+      x += sliceWidth;
+    }
+    waveCtx.stroke();
+    rafId = requestAnimationFrame(drawWave);
+  }
+
+  function floatTo16BitPCM(float32Array){
+    const buffer = new ArrayBuffer(float32Array.length * 2);
+    const view = new DataView(buffer);
+    let offset = 0;
+    for (let i = 0; i < float32Array.length; i++, offset += 2){
+      let s = Math.max(-1, Math.min(1, float32Array[i]));
+      view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return buffer;
+  }
+
+  function renderTranscript(){
+    transcriptBody.classList.remove('empty');
+    transcriptBody.innerHTML = '';
+    const finalSpan = document.createElement('span');
+    finalSpan.textContent = finalText;
+    transcriptBody.appendChild(finalSpan);
+    if (interimText){
+      const interimSpan = document.createElement('span');
+      interimSpan.className = 'interim';
+      interimSpan.textContent = (finalText ? ' ' : '') + interimText;
+      transcriptBody.appendChild(interimSpan);
+    }
+    if (state === 'recording' || state === 'connecting'){
+      const caret = document.createElement('span');
+      caret.className = 'live-caret';
+      transcriptBody.appendChild(caret);
+    }
+    transcriptBody.scrollTop = transcriptBody.scrollHeight;
+  }
+
+  async function startRecording(){
+    hideBanner();
+    finalText = '';
+    interimText = '';
+    lastConfidence = null;
+    detectedLangs = new Set();
+    metaTags.innerHTML = '';
+    transcriptBody.innerHTML = '';
+
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch(err){
+      showBanner('Microphone access was blocked. Allow mic permission in your browser and try again.');
+      return;
+    }
+
+    state = 'connecting';
+    stageLabel.textContent = 'Connecting…';
+    renderTranscript();
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(stream);
+
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 1024;
+    source.connect(analyser);
+    drawWave();
+
+    const model = DEFAULT_MODEL;
+    const lang = langEl.value;
+    const toggles = getToggles();
+    
+    // Apne Local Backend Server ka address banayein
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const params = new URLSearchParams({
+      language: lang,
+      sample_rate: String(audioCtx.sampleRate),
+      model: model,
+      smart_format: String(toggles.smartFormat),
+      punctuate: String(toggles.punctuate)
+    });
+    const wsUrl = `${protocol}//${window.location.host}/listen?${params.toString()}`;
+    
+    // Backend se connect karein (Bagair kisi API key ke!)
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      processorNode = audioCtx.createScriptProcessor(4096, 1, 1);
+      muteGain = audioCtx.createGain();
+      muteGain.gain.value = 0;
+      source.connect(processorNode);
+      processorNode.connect(muteGain);
+      muteGain.connect(audioCtx.destination);
+      processorNode.onaudioprocess = (e) => {
+        if (ws && ws.readyState === WebSocket.OPEN){
+          const input = e.inputBuffer.getChannelData(0);
+          ws.send(floatTo16BitPCM(input));
+        }
+      };
+
+      secondsElapsed = 0;
+      timerEl.textContent = fmtTime(0);
+      timerEl.classList.add('live');
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        timerEl.textContent = fmtTime(secondsElapsed);
+      }, 1000);
+
+      state = 'recording';
+      recBtn.classList.add('recording');
+      recBtn.setAttribute('aria-label','Stop recording');
+      stageLabel.textContent = 'Recording — tap to stop';
+      renderTranscript();
+    };
+
+    ws.onmessage = (event) => {
+      let msg;
+      try { msg = JSON.parse(event.data); } catch(e){ return; }
+      if (msg.type !== 'Results') return;
+      const alt = msg.channel && msg.channel.alternatives && msg.channel.alternatives[0];
+      if (!alt) return;
+      const piece = (alt.transcript || '').trim();
+
+      if (typeof alt.confidence === 'number') lastConfidence = alt.confidence;
+      const detLang = msg.channel && msg.channel.detected_language;
+      if (detLang) detectedLangs.add(detLang);
+
+      if (msg.is_final){
+        if (piece){
+          finalText = finalText ? (finalText + ' ' + piece) : piece;
+        }
+        interimText = '';
+      } else {
+        interimText = piece;
+      }
+      renderTranscript();
+    };
+
+    ws.onerror = () => {
+      showBanner('Lost connection to the backend server.');
+    };
+
+    ws.onclose = (evt) => {
+      if (state !== 'idle' && evt.code !== 1000 && evt.code !== 1005){
+        showBanner('Connection closed unexpectedly. Try again.');
+      }
+    };
+  }
+
+  function stopRecording(){
+    stageLabel.textContent = 'Finishing up…';
+    recBtn.classList.add('busy');
+
+    if (ws && ws.readyState === WebSocket.OPEN){
+      try { ws.send(JSON.stringify({ type: 'CloseStream' })); } catch(e){}
+      setTimeout(() => { if (ws) ws.close(); }, 600);
+    } else if (ws) {
+      ws.close();
+    }
+
+    if (processorNode) processorNode.disconnect();
+    if (muteGain) muteGain.disconnect();
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (rafId) cancelAnimationFrame(rafId);
+    if (audioCtx) audioCtx.close();
+    clearInterval(timerInterval);
+    timerEl.classList.remove('live');
+    drawIdleWave();
+
+    interimText = '';
+    renderTranscript();
+
+    if (!finalText){
+      transcriptBody.textContent = 'No speech detected in that take.';
+      transcriptBody.classList.add('empty');
+    } else {
+      metaTags.innerHTML = '';
+      if (lastConfidence !== null) addTag(Math.round(lastConfidence * 100) + '% confidence');
+      const langLabel = detectedLangs.size ? Array.from(detectedLangs).join(', ') : langEl.options[langEl.selectedIndex].text;
+      addTag(langLabel);
+      addHistoryEntry({ lang: langLabel, text: finalText, confidence: lastConfidence !== null ? Math.round(lastConfidence * 100) : null, time: new Date() });
+      showBanner('Recording saved', 'success');
+    }
+
+    resetToIdle();
+  }
+
+  function addTag(label){
+    const t = document.createElement('div');
+    t.className = 'tag';
+    t.textContent = label;
+    metaTags.appendChild(t);
+  }
+
+  function resetToIdle(){
+    recBtn.classList.remove('busy','recording');
+    recBtn.setAttribute('aria-label','Start recording');
+    stageLabel.textContent = 'Tap to record';
+    timerEl.textContent = '00:00';
+    state = 'idle';
+    ws = null;
+  }
+
+  let history = [];
+  function addHistoryEntry(entry){
+    history.unshift(entry);
+    if (history.length > 20) history.pop();
+    renderHistory();
+  }
+  
+  function renderHistory(){
+    if (history.length === 0){
+      histList.innerHTML = '<div class="empty-note">Runs from this session will show up here.</div>';
+      return;
+    }
+    histList.innerHTML = '';
+    history.forEach((h) => {
+      const item = document.createElement('div');
+      item.className = 'hist-item';
+      const timeStr = h.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      item.innerHTML =
+        '<div class="hist-top"><span>' + escapeHtml(h.lang) + (h.confidence !== null ? ' · ' + h.confidence + '%' : '') + '</span><span>' + timeStr + '</span></div>' +
+        '<div class="hist-snip">' + escapeHtml(h.text.substring(0, 90)) + (h.text.length > 90 ? '…' : '') + '</div>';
+      item.addEventListener('click', () => {
+        transcriptBody.textContent = h.text;
+        transcriptBody.classList.remove('empty');
+        metaTags.innerHTML = '';
+        addTag(h.lang);
+        if (h.confidence !== null) addTag(h.confidence + '% confidence');
+      });
+      histList.appendChild(item);
+    });
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  copyBtn.addEventListener('click', () => {
+    const text = transcriptBody.textContent;
+    if (!text || transcriptBody.classList.contains('empty')) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const old = copyBtn.textContent;
+      copyBtn.textContent = 'Copied';
+      setTimeout(() => { copyBtn.textContent = old; }, 1200);
+    }).catch(() => {});
+  });
+
+  recBtn.addEventListener('click', () => {
+    if (state === 'idle') startRecording();
+    else if (state === 'recording') stopRecording();
+  });
+
+  window.addEventListener('resize', resizeWaveCanvas);
+  resizeWaveCanvas();
+  drawIdleWave();
+})();
+</script>
+</body>
+</html>
